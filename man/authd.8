@@ -1,0 +1,110 @@
+.\" Copyright Georgios Portokalidis, 2004.
+.\"
+.\" This file may be copied under the conditions described
+.\" in the GNU GENERAL PUBLIC LICENSE, Version 2, June 1991
+.\" that should have been distributed together with this file.
+.\"
+.TH AUTHD 8 "April 22, 2004" "Version 0.8" "System Manager's Manual"
+.SH NAME
+authd \- Admission control daemon
+.SH SYNOPSIS
+.BI "authd [" OPTIONS "]"
+.SH DESCRIPTION
+.B authd
+provides authorisation services to other services. It performs
+authentication and authorisation solely based on the data received and a local
+policy, thus it shouldn't be used directly by the entities requesting
+authorisation. It should be used by services carrying out actions on behalf of
+other entities and wish to apply some control on the actions performed. These
+services can prepare a request based on the actions requested and the
+credentials of the requesting party to receive authorisation according to the
+policy of admission control.
+.P
+The keynote trust-management system is used to validate actions against a set of
+credentials. The format is as specified in RFC 2704. Credentials can also be
+delegated from one entity to another. More details on keynote and credentials
+can be found in the man pages listed at the end of this manual.
+.P
+.B authd
+uses shared memory IPC to communicate with its clients. Synchronisation is
+performed using a set of semaphores. Required files include a policy according
+to which authorisation is performed along with a public/private key pair. These
+files are expected to lie in \'/etc/authd\'. The shared memory is writable by
+the user and group id 
+.B authd
+is running as. This means that for communication to be possible, clients
+need to belong in the same group or run as the super-user id.
+.P
+Optionally, resource control can be used. Resource requirements are calculated
+for each action and then aggregated. The summation of required resources is
+then checked against the credentials, and for availability. Note that resources
+are not consumed by resource control, instead a structure containing the
+resources required is returned.
+.B authd
+clients can consume the resources themselves. A Berkeley database (http:/
+www.sleepycat.com) containing available resources and resource consumption is
+required. Such a database can be created using authdb_manage(8). The database
+should be named \'resource.db\' and is expected to lie in \'/etc/authd
+resourcectrl\'.
+.SH OPTIONS
+.\" daemon
+.TP
+.B "\-d, \-\-daemon"
+Run as a daemon in the background.
+.\" policy
+.TP
+.BI "\-p, \-\-policy=" filename 
+.RI "Read policy from " filename ". Default is \'/etc/authd/policy\'."
+.\" ipc pathname
+.TP
+.BI "\-p, \-\-shmpath=" pathname
+.RI "Use " pathname " to generate IPC key for shared memory and semaphores.
+Default is \'/tmp/.authd\'.
+.\" ipc id
+.TP
+.BI "\-i, \-\-shmid=" character
+.RI "Use " character " to generate IPC key for shared memory and semaphores.
+Default is 'A'.
+.\" resource control db path
+.TP
+.BI \-D, \-\-dbhome=" path
+.RI "Set directory where resource control database is located to " path "."
+Default is \'/etc/authd/resourcectrl\'.
+\" resource control db file name
+.TP
+.BI \-b, \-\-dbname=" name
+.RI "Set filename where resource control database is located to " name "."
+Default is \'resource.db\'.
+.\" disable resource control
+.TP
+.B "\-R, \-\-rc"
+Enable resource control, requires that resource control was enabled at compile
+time.
+.\" verbosity
+.TP
+.B "\-v, \-\-verbose"
+Print verbose messages for each client's request.
+.\" help
+.TP
+.B "\-h, \-\-help"
+Print a usage message on standard output and exit successfully.
+.\" rest of man page
+.SH EXAMPLES
+.B "authd \-d \-R \-v"
+.P
+Start
+.B authd
+in the background, using resource control and printing verbose
+messages.
+.SH EXIT STATUS
+Zero if terminated successfully by receiving one of the:
+.BR SIGINT ", " SIGQUIT " or " SIGHUP
+signals and non-zero on error.
+.SH FILES
+.IR /etc/authd/policy ", " /etc/authd/authd_pub.key ", "
+.I /etc/authd/authd_priv.key
+.SH SEE ALSO
+authdfe(8), authdb_manage(8), keynote(1), keynote(4), keynote(5)
+.SH AUTHOR
+Georgios Portokalidis (gportoka@liacs.nl)
+

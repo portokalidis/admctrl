@@ -1,0 +1,10 @@
+RELEASE NOTES v0.8.8
+
+
+The admission control request structure is too large for the kernel stack.
+Such a structure should either be allocated using vmalloc() or globally for a
+module.
+
+No marshalling-unmarshalling is performed when using the front-end to use
+admission control over the network. Users should beware not to use this version
+on machines with different bytecode or different number sizes.

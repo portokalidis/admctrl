@@ -1,0 +1,134 @@
+                                   ----------------
+                                   RESOURCE CONTROL
+                                   ----------------
+
+
+
+INTRODUCTION
+------------
+
+Resource control support in AUTHD is an experimental feature. It does not aim in
+providing "real" resource control in the sense that there is no actual
+resources monitoring. Instead a set of available host resources, stored in a
+file database, is used. The same database contains entries defining the
+resource consumption of each function call action. The required resources of
+all the actions in a request are summed up and checked both against the
+available resources in the database and resource restrictions in the
+credentials. (Actions that resource consumption is not defined in the database
+are ignored.) If the check is successful the request is authorised. Note
+that resources are not consumed by AUTHD. If this is desirable it needs to be
+done by the requesting service.
+
+
+
+DATABASE
+--------
+
+The database used to hold the resource consumption is Berkeley DB
+(www.sleepycat.com). This choice was made because we wanted to use a simple and
+robust file database without forcing users to install more than a library.
+
+In Berkeley DB its database contains one table, so the file containing the DB
+actually has one DB per table, but that shouldn't concern the user of resource
+control since access to the DB should be performed through the functions
+contained in 'resource_ctrl.h'.
+
+The schema of the database is shown in figure resource_ctrl.pdf. There are 4
+tables:
+functiondb
+It contains function actions' names and a corresponding key 32bit integer key.
+librarydb
+It contains function actions' library names and a corresponding key 32bit
+integer key.
+resourcedb
+It contains available resources. Entries have a 32bit integer key, an integer
+number specifying the available resources and a description.
+resourcecondb
+It contains resource consumption of function actions. Entries have a 32bit
+integer key, a foreign key to the resourcedb table, an integer number
+specifying the fixed cost of an action and a string formula used for
+calculating the variable cost of the action.
+
+The keys in functiondb & librarydb are combined to provide the key for
+resourcecondb. The key from librarydb (indicated as key2 in the figure) is
+shifted left 16bits and bitwise OR'ed with the key from functiondb (key1). This
+allows different resource consumption to be specified for each library -
+function pair. Moreover by specifying a value for key1 with the 16 high bits
+asserted, we retrieve the same key (pk) for resourcecondb regardless of the
+library. In this way a function can be set to have the same resource
+consumption for all libraries. In all the other cases the 16 high bits should
+be 0 (key less than 65536). The 16 higher bits of key2 are always ignored
+(maximum key2 65536). The foreign key in resourcecondb (fk) can be used to
+locate available resources in resourcedb.
+
+
+
+RESOURCE CONSUMPTION CALCULATION
+--------------------------------
+
+As it was mentioned earlier resource consumption for each function action is
+calculated using 2 entries in resourcecondb. 
+
+A numeric fixed cost is always applied to every function action.
+
+A variable cost is calculated using the variable cost formula string. This
+string is a simple arithmetic expression that will be evaluated for every
+function action. The string is also passed as a format string to a sprintf
+along with the function actions' arguments, enabling this way correlation
+between the values of the arguments and the resource consumption of the
+function action. For string arguments the size is used as an integer. E.g. for
+a function with arguments (char *,char *,int) a valid formula would be "%3$d *
+( %1$d + %2$d )". The spaces between tokens are mandatory. Valid operators are
++, -, /, *, (, ). All the number in the expression are then evaluated as
+double, which could cause some loss of precision.
+
+
+
+RESOURCE CONTROL API
+--------------------
+
+To use the resource control database the functions defined in resource_ctrl.h
+can be used. When resource control is enabled at compiled time these functions
+are included in libadmctrlcl.a. We will briefly mention them here. Please look
+doc/latex and doc/html for a more detailed description.
+
+int resource_ctrl_dbinit (resource_ctrl_db_t *)
+	Initialise a resource control database. 
+
+int resource_ctrl_dbopen (resource_ctrl_db_t *, const char *, const char *,
+u_int32_t, u_int32_t)
+	Open a resource control database. 
+
+void resource_ctrl_dbclose (resource_ctrl_db_t *)
+	Close a resource control database. 
+
+int 
+resource_ctrl_allocate (resource_ctrl_db_t *, resource_required_t *, size_t) 
+	Allocate required resources. 
+
+int 
+resource_ctrl_deallocate (resource_ctrl_db_t *, resource_required_t *, size_t)
+	Deallocate assigned resources. 
+
+
+
+CREATION/MANAGEMENT
+-------------------
+
+For the database a database home (a directory where all database files are going
+to be created) needs to specified and a name for the main database file. The
+assisting utility authdb_manage can be used to create the database and manage
+it. For more information please read authdb_manage(8).
+
+
+
+ASSERTIONS
+----------
+
+For each required resource by the request the following assertion is generated
+by authd:
+	RESOURCE.(key) = (value)
+
+key is the primary key of a resourcedb entry and value the amount of resources
+required. Note that AUTHD checks for availability of this amount.
+

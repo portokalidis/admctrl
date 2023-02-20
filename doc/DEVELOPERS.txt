@@ -1,0 +1,127 @@
+                           -----------------
+                           DEVELOPER'S GUIDE
+                           -----------------
+
+
+INTRODUCTION
+------------
+
+Thu purpose of this document is to provide a short guide for developers using
+the admission control client library library libadmctrlcl.a.
+
+The developer can also consult the source code in tests/client.c for an example
+on how to use the library.
+
+More information on the library functions mentioned in this document can be
+found on the authd(3) man page.
+
+
+STEPS
+-----
+
+1. Depending on the type of client create a session using:
+	- admctrlcl_new_ipc() for local clients using IPC
+	- admctrlcl_new_socket() for remote clients using sockets
+
+It is possible to specify your own admission control request and result
+structure so that you will not have to set the request and fetch the result
+for each access of admission control. If none is specified the client will
+allocate its own structures.
+Whether a persistent connection should be used is also specified at this point.
+When using a persistent connection you have to explicitly open and close it.
+Alternatively the library will try open communication before submitting a
+request and close it when the results are returned.
+
+2. Optionally if your client uses sockets enable SSL with admctrlcl_use_SSL()
+
+3. Open communication with server (in the case of a non-persistent client
+connection, communication is going to be established when the request is
+submitted)
+
+4. Allocate an admission control request structure adm_ctrl_request_t and
+initialise all bytes to null using bzero()
+
+5. Set the request's authorisation information (public key, credentials, nonce
+and encrypted nonce) using admctrl_req_set_authinfo(). 
+To assist end-users who need to encrypt the nonce using their private key we
+provide the code snippet in 'encrypt_nonce.c'. Note that it is not the only to
+do the encryption. It needs to be linked with -lkeynote -lm -lcrypto.
+
+6. Add name-value pair actions to the request using admctrl_req_add_nvpair()
+
+7. Add function call actions to the request using:
+	- admctrl_req_add_sfunction() if you have serialised the arguments yourself
+	  (look at FUNCTION ACTIONS SERIALISATION below)
+	- admctrl_req_add_function() to directly supply the arguments
+
+8. If you haven't specified your own request structure at step 1, then set the
+request to be submitted using admctrlcl_set_request()
+
+9. Submit request to server using admctrlcl_submit_request() (this will
+actually open the connection if the client's connection is not persistent)
+
+9. If you haven't specified your own result structure at step 1, get a pointer
+to the result of the request using admctrlcl_get_result()
+
+10. Close communication with server using admctrlcl_comm_close() (will only do
+something if a persistent connection is being used)
+
+11. Destroy client using admctrlcl_destroy()
+
+
+FUNCTION ACTIONS SERIALISATION
+------------------------------
+
+This information about the serialisation format of function actions is intended
+for developers that wish to use admctrl_req_add_sfunction(), or directly
+manipulate a request structure.
+
+The general serialised format of a function is 
+
+FUNCTION_NAME + LIBRARY_NAME + ARGUMENTS_TYPE_SPECIFICATION + ARGUMENT + ... 
+
+The first 3 are strings and should be null terminated. Arguments are written in
+binary format and are not strings.
+
+FUNCTION_NAME: The name of the function
+LIBRARY_NAME: The name of the library the function belongs to
+ARGUMENTS_TYPE_SPECIFICATION: A string specifying the type of the function's
+arguments. Each character in the string specifies the type of an argument, thus
+the length of the string is the number of arguments this functions has.
+Supported arguments are: integers ('i'), floats ('f'), unsigned long long
+integers ('U') and other functions ('F'). When a function accepts another
+function as argument, then ARGUMENT is in fact an entire serialised function.
+This has been chosen so that de-serialisation can be done recursively.
+ARGUMENT: The data of the argument in binary format. When a string it has to be
+null terminated.
+
+Note that even though a function can appear with different types of arguments
+this will cause the maximum and minimum argument value assertions to be
+invalid.
+
+
+KERNEL PORT
+-----------
+
+The functions for creating admission control request have been ported to the
+kernel. The functions name are the same with the addition of a prefix 'k'. The
+implementation is located in the linux kernel module kadmctrl_req.ko.
+
+The steps to submit a request are shown below:
+
+1. Allocate an admission control request and structure adm_ctrl_request_t and
+initialise all bytes to null using bzero()
+
+2. Set the request's authorisation information (public key, credentials, nonce
+and encrypted nonce) using kadmctrl_req_set_authinfo(). 
+
+3. Add name-value pair actions to the request using kadmctrl_req_add_nvpair()
+
+4. Add function call actions to the request using:
+	- kadmctrl_req_add_sfunction() if you have serialised the arguments yourself
+	  (look at FUNCTION ACTIONS SERIALISATION below)
+	- kadmctrl_req_add_function() to directly supply the arguments
+
+
+5. Submit request to server using authdev_submit() ( requires device driver
+authdev, authdev_submit(9))

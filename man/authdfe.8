@@ -1,0 +1,136 @@
+.\" Copyright Georgios Portokalidis, 2004.
+.\"
+.\" This file may be copied under the conditions described
+.\" in the GNU GENERAL PUBLIC LICENSE, Version 2, June 1991
+.\" that should have been distributed together with this file.
+.\"
+.TH AUTHDFE 8 "May 6, 2004" "Version 0.8" "System Manager's Manual"
+.SH NAME
+authdfe \- Admission control daemon front\-end
+.SH SYNOPSIS
+.BI "authdfe [" OPTIONS "]"
+.SH DESCRIPTION
+A front-end for the admission control daemon authd(8).
+.P
+.B authdfe
+permits applications that cannot directly send requests to authd (using
+IPC) to do so through it. It needs to be run on a host already running authd,
+since it uses IPC itself to contact admission control. Admission control is
+exported through the network and the filesystem.
+.P
+The front-end establishes an Internet server that is listening for TCP
+connections. Requests are received through these connections and are then
+forwarded to admission control. The results are transmitted back through the
+same connection. SSL is supported to authenticate clients and/or the server,
+and to encrypt transmitted requests and results.
+.br
+Note that when using SSL, unencrypted connections are not allowed.
+.P
+The front-end can also use the filesystem to read requests and write results.
+This feature should be used along with the linux kernel module device driver
+authdev. This enables the kernel to send requests to user-space using
+authdev_submit(9).
+.P
+authfe is multithreaded. A number of threads is spawned when first run and are
+used to service incoming connections. An additional thread is also created when
+accepting requests for a device file.
+.SH OPTIONS
+.\" hostname
+.TP
+.BI "\-H, \-\-host=" HOSTNAME
+.RI "Bind server to " HOSTNAME ". Default is any."
+.\" port number
+.TP
+.BI "\-p, \-\-port=" PORT_NUMBER 
+.RI "Use port number " PORT_NUMBER ". Default is 7914."
+.\" threads number
+.TP
+.BI "\-e, \-\-threads=" THREADS_NUM
+.RI "Use " THREADS_NUM " number of threads to serve requests. Default is 5."
+.\" network timeout
+.TP
+.BI "\-b  \-\-nettimeout=" TIMEOUT
+.RI "Set the network timeout to " TIMEOUT " seconds. Default is 0." 
+.br
+This option sets the timeout for read and write operations on the client
+sockets. If it is not set synchronous I/O is performed. It is highly
+recommended to set a timeout or a misbehaving client could block a serving
+thread forever.
+.\" admission control timeout
+.TP
+.BI "\-t, \-\-servtimeout=" TIMEOUT
+.RI "Set the admission control daemon timeout to " TIMEOUT " seconds. Default is
+1 second
+.br
+This option sets the timeout for receiving results from authd. It should also be
+set to non-zero to avoid blocking threads forever.
+.\" ipc pathname
+.TP
+.BI "\-P, \-\-ipcpath=" PATH
+.RI "Use " PATH " to generate IPC key for admission control shared memory and
+semaphores. Default is \'/tmp/.authd\'.
+.\" ipc id
+.TP
+.BI "\-i, \-\-ipcid=" CHARACTER
+.RI "Use " CHARACTER " to generate IPC key for admission control shared memory
+and semaphores. Default is \'A\'.
+.\" persistent connections
+.TP
+.B "\-r, \-\-persistent"
+Allow persistent connections.
+.br
+When set clients can submit more than one requests on the same connection. In
+any other way connections will be closed after receiving a request and
+transmitting the corresponding response. It should be used along the -n options
+to avoid blocking for requests indefinitely.
+.\" device file interface
+.TP
+.BI "\-d, \-\-dev=" DEVNAME
+Starts an additional thread reading requests from character device file named
+.IR DEVNAME "."
+.\" SSL
+.TP
+.B "\-s, \-\-ssl"
+Enable SSL secure socket layer for connections. Note that non\-SSL connections
+will no longer be accepted.
+.\" server certificate
+.TP
+.BI "\-c, \-\-cert=" FILENAME
+.RI "Use server certificate contained in file " FILENAME " when using SSL.
+Default is \'server.pem\'
+.\" server
+.TP
+.BI "\-k, \-\-priv=" FILENAME
+.RI "Use private key contained in file " FILENAME " when using SSL. Default is
+\'server.key\'
+.\" help
+.TP
+.B "\-h, \-\-help"
+Print a usage message on standard output and exit successfully.
+.\" rest of man file
+.SH EXIT STATUS
+Zero if terminated successfully by receiving one of the :
+.BR SIGINT ", " SIGQUIT " or " SIGHUP
+signals and non-zero on error.
+.SH FILES
+
+.SH EXAMPLES
+.B "authdfe \-p 466 \-n 1 \-r \-s"
+.P
+Starts
+.B authdfe
+listening on port 466, with a network timeout of 1 second. Persistent
+connections are allowed and SSL is enabled.
+.SH SEE ALSO
+authd(8), openssl(1), authdb_manage(8), authdev_submit(9), keynote(1),
+keynote(4), keynote(5)
+.SH AUTHOR
+Georgios Portokalidis (gportoka@liacs.nl)
+.SH NOTES
+IMPORTANT this version of
+.B authfe
+doesn't support marshalling, thus will not work properly when the client and the
+front-end lie in machines having different byteorder or different number sizes.
+Future versions of
+.B authdfe
+will support this.

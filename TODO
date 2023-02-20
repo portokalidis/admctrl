@@ -1,0 +1,4 @@
+Perform marshalling-unmarshalling when transmitting requests over the network.
+
+Support for clients using resource control through AUTHDFE while AUTHD doesn't
+support it.

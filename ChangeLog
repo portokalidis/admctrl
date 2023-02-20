@@ -1,0 +1,97 @@
+ADMCTRL - Admission Control Daemon - ChangeLog
+--------------------------------------------
+
+0.8.9
+=====
+
+Configuration
+  * configure.ac Fixed for additional compatibility
+  * src/Makefile.am Updated to reflect changes in configure.ac
+  * tests/Makefile.am Updated to reflect changes in configure.ac
+  * kernel/kadmctrl_req.c Removed the 'k' prefix from functions
+  * kernel/kclient.c Updated to reflect changes in kernel/kadmctrl_req.c
+
+0.8.8
+=====
+
+Configuration
+  * configure.ac Added options to specify seperate keynote header and 
+  library directory,
+
+Tests
+  * tests/enc_nonce Encrypts a nonce and prints it out in hex.
+  * kernel/kclient.c Kernel driver test client.
+
+Kernel Driver
+  * kernel/kadmctrl_req.c Admission control request manipulation function
+  for the kernel.
+
+0.8.7
+=====
+
+Resource control
+  * arith_parser.c updated postfix_expr_parse() & infix_expr_parse() to
+  successfully parse an empty string and return 0 as a result.
+
+0.8.6
+=====
+
+Documentation
+  Added authd_setup(8) man page.
+  Updated authd(3) man page.
+
+Admission control client library
+  Function admctrl_req_set_authinfo() now accepts buffers
+  containing the public key and credentials instead of the files containing 
+  them.
+  Removed function admctrl_req_encrypt_nonce(). It's an end-user assisting
+  function. Code provided as a C snippet in 'doc/encrypt_nonce.c'.
+
+0.8.5
+====
+
+Documentation
+  Added more documentation under doc/.
+  Written tests/README.
+
+Configuration
+  Corrected configure.ac, src/Makefile.am and tests/Makefile.am to link only
+  necessary libraries.
+
+Tests
+  Updated client to support resource control and test function type arguments.
+
+0.8.4
+=====
+
+Documentation
+  Added authd(3) man page for developers and updated documentation in doc/.
+
+Configuration
+  Added option --disable-authd to enable stand alone compilation of the client
+  library.
+
+0.8.3 
+=====
+
+Admission control front-end
+  Added support for linux kernel module device driver.
+  Renamed front-end executable to 'authdfe'.
+
+Configuration
+  Changed --without-clientlib to --disable-clientlib.
+  Changed --with-frontend to --enable-front-end.
+  Changed --with-keynote-prefix to --with-keynote.
+  Changed --with-db-prefix to --with-berkeley-db.
+  Changed --with-pthread-prefix to --with-pthread.
+  Changed --with-snprintfv-prefix to --with-snprintfv.
+
+0.8.2
+=====
+
+Added a linux kernel module device driver
+
+0.8
+===
+
+Started using the GNU build system

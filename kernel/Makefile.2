@@ -1,0 +1,6 @@
+# If this doesn't work for you then you will have to set it up manually
+LINUX_SRC=/usr/src/linux-$(MAKEFOR)
+CC=gcc
+CFLAGS=-D__KERNEL__ -DMODULE -DLINUX -I$(LINUX_SRC)/include -O
+
+mods: authdev.o kadmctrl_req.o kclient.o

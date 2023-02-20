@@ -1,0 +1,3 @@
+&$("TIMEDIFF.param.0.max") < 1600.0 &&
+  $("TO_TCPDUMP.param.1.max") < "1234567899" &&
+  (STR_SEARCH != "defined" || @$("STR_SEARCH.param.1.min") > 10) -> "true";

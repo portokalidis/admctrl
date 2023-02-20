@@ -1,0 +1,212 @@
+                   -------------------------------
+                   AUTHd: ADMISSION CONTROL DAEMON
+                   -------------------------------
+
+
+
+REQUIREMENTS
+------------
+
+keynote 2.3 or later compiled with crypto.
+	Download from: http://www.cis.upenn.edu/~keynote/
+OpenSSL (tested with 0.9.7b)
+	Download from: http://www.openssl.org/
+
+To use resource control you will also need:
+	libsnprintfv v1.0 or later
+	Download from: http://savannah.nongnu.org/projects/libsnprintfv
+	Berkeley DB 3.3.11 or later
+	Download from: http://www.sleepycat.com
+
+To compile the front-end you will also need pthreads. It has been know to
+work with LinuxThreads contained in glibc in most systems.
+
+To compile the kernel module front-end you will need the source of linux kernel
+2.4 or later. It has been know to compile for 2.4.22, 2.4.26, 2.6.2, 2.6.5.
+
+Has been know to work on:
+  Slackware 9.1, gcc 3.2.3, glibc-2.3.2
+  Gentoo, gcc 3.3.2, glibc 2.3.2 
+
+
+CONFIGURATION
+-------------
+
+Besides the standard configuration options of ./configure these are also
+available:
+
+Optional Features:
+  --enable-syslog         enable logging using syslog, default no
+  --enable-debug=0|1|2    enable debug messages (0=none,1=normal,2=extensive),
+                          default 0
+  --enable-resource-control
+                          include resource control, default no [EXPERIMENTAL]
+  --disable-clientlib     don't install the client library, default yes
+  --enable-front-end      build the front-end, default no
+Optional Packages:
+  --with-kernel=version   specify a kernel version to compile kernel module
+                          device driver [OPTIONAL]
+
+
+The header file 'src/admctrl_config.h' contains definitions of constant values
+relating to maximum key sizes, maximum action values, etc. Take extreme
+care when altering any of these values.
+
+
+
+DESCRIPTION
+-----------
+
+The purpose of this daemon is to provide authorisation services for other
+services. It can be used to authenticate and authorise entities to perform a
+set of actions depending on their credentials and a policy.
+
+Entities are identified by a public (RSA) key. They are authenticated using
+a simple random (integer) number challenge. This means that they are required
+to encrypt a random number with their private key and provide this information
+along with their credentials. authd decrypts the data with the entity's public
+key located in the credentials and checks if the result of the decryption
+matches the random number (also called nonce). Since admission control is in
+fact stateless (the only persistent state is the policy), the requesting
+service is the one that must provide the random number to the entity for
+encryption.
+
+Authorisation of actions is performed based on the requested actions and the a
+set of conditions specified in the credentials. The requested actions generate
+assertions, which are checked against the conditions to determine their
+validity.
+
+Admission control uses the keynote trust-management system for authorisation.
+Credentials and policies use the format defined by keynote. Furthermore
+credentials can be delegated from one entity to another. For more information
+please read the keynote man pages, and see RFC 2704.
+
+Two types of actions are supported. They are quite generic in
+nature and can be used for various purposes. These are: name-value pairs and
+function calls.
+
+Name-value pairs are quite straightforward. A single assertion will be
+generated assigning 'value' to 'name' and checking it against the conditions in
+the credentials.
+
+Function call actions provide a generic way to authorise the execution
+of any function by providing its name and a belonging library. Authorising a
+function call also includes validating the arguments' values (See doc/
+ASSERTIONS.txt for a list of the all the generated assertions). Currently
+supported types for function arguments are: integer, float, string, unsigned
+long long and function.
+
+AUTHD uses shared memory IPC to receive requests and send results to services.
+Only a single segment of memory is used for this purpose, thus semaphores are
+used to synchronise processes accessing the shared memory segment. The shared
+memory is writable by the user and group id authd is running as. This means
+that for communication with AUTHD to be possible, the admission control clients
+need to belong in the same group or run as the super-user id. More info in
+authd(8) man page.
+
+AUTHDFE is an optional front-end that can be compiled to provide a network 
+interface to AUTHD. OpenSSL is also supported. AUTHDFE is also needed to provide
+interconnectivity with the kernel. More info in authdfe(8) man page.
+
+libadmctrlcl.a, a client library for accessing admission control either
+directly or through the front-end can is also provided. Instructions on how to
+use the library can be found in doc/DEVELOPERS.txt and authd(3) man page.
+
+authdev.o or authdev.ko is a linux kernel device driver that allows the kernel
+to access AUTHd in user-space through AUTHDFE. This is accomplished by creating
+a device file which the driver handles. The front-end is then using this file
+to read requests, forward them to admission control and write results. Please
+read the KERNEL MODULE section.
+
+
+
+INSTALLING
+----------
+
+After running make, make install is going to install everyting except the kernel
+module, the tests and documentation under doc/.
+Binaries are installed under prefix/sbin, manuals undex prefix/man and libraries
+under prefix/lib.
+
+
+
+KERNEL MODULE
+-------------
+
+The kernel module contained in the distribution will not be compiled and
+installed by 'make' & 'make install'. This had been done mostly because with
+the new 2.6 kernels, you need to have write permissions for the source code
+when compiling external modules. To compile the module you have to run 'make
+module'. The result module will be 'kernel/authdev.o' or 'kernel/authdev.ko'
+depending on the kernel version you are compiling for (.ko is for 2.6). You
+will have to copy this manually to wherever you want it installed (e.g. /lib
+modules/2.6.5/kernel/security).
+To use the kernel module you need to create the device file '/dev/authdev' with
+a major number of 250 and minor 0. If the major number is taken in your system
+you can use a different one and specify it as a command line argument when
+loading the module (e.g insmod authdev.ko major_num=220). 
+You can create the device file by issuing: mknod /dev/authdev c 250 0
+(Some systems use mkdev instead of mknod)
+When the kernel module is loaded you can observe its status through proc file 
+'/proc/authdev'.
+The client libraries for manipulating requests have not been ported for the
+kernel yet, so the developer needs to directly construct an admission control
+request at this point. Future versions of the module are going to export
+assisting functions as well.
+
+This module exports the function authdev_submit() which is responsible for
+sending the data to AUTHD in user-space. This function can (and it most
+probably will) sleep. Find more info in the authdev_submit(9) man page.
+
+
+
+SETUP
+-----
+
+To actually start using admission control some files need to be installed in
+"well-known" locations. Such files are the admission control's public, private
+keys and policy. To generate these files you can either use keynote directly,
+which gives you more fine grained control, or use the setup script
+'authd_setup.sh' for a jump start. This script is also installed by 'make
+install'. Note that you will eventually have to use keynote, if you plan to
+have a fine grained admission control.
+For more info on 'authd_setup.sh' see the authd_setup(8) man page.
+
+
+
+TESTING
+-------
+
+There are not automated checks to ensure the validity of admission control, but
+instead you can find the utility 'tests/client' to perform requests to authd
+and check the correctness of the results yourself. This utility provides a text
+menu which you can use to manipulate the request sent to authd.
+Please read tests/README for more information.
+
+
+
+RESOURCE CONTROL
+----------------
+
+AUTHD can be used to perform some kind of resource control as well. By resource
+control it is not meant that host resources are monitored, but a predefined
+amount of 'available' resources is used. AUTHD can in that case calculate the
+resource consumption of the function actions and return the amount of required
+resources for them to the requesting service. The amount of resources could be
+simply limited by conditions in users credentials or even be consumed by the
+requesting service. This feature is experimental so if you are thinking of
+using you should definitely read doc/RESOURCE_CONTROL.txt. 
+
+
+
+HISTORY
+-------
+
+AUTHD started as a part of the SCAMPI (http://www.ist-scampi.org) and FFPF
+(http://ffpf.sourceforge.net) projects related to Internet monitoring.
+SCAMPI is already using a version of AUTHd and future versions of FFPF will be
+using it as well.
+
+
+If you are using admission control for your project please send an email to 
+G. Portokalidis <digital_bull@users.sourceforge.net>

@@ -1,0 +1,170 @@
+                                    ------- 
+                                    TESTING
+                                    -------
+
+
+
+TESTS UTILITIES
+---------------
+
+client
+Interactive admission control client. Offers a text menu driven interface for
+users to create their own requests and send them to authd.
+
+calc_test
+A simple calculator using our arithmetical expressions processor.
+ 
+snprintfv_test
+Test of library snprintfv. Prints out the maximum values for the supported
+argument types.
+
+authenticate
+A simple test of our random nonce challenge.
+
+
+
+CLIENT
+------
+
+Before using client a couple of files need to be present. First of all public
+and private RSA key. These can be easily be created using authd_setup.sh like
+this: authd_setup.sh keys 1024 pub priv. A public and private key is supplied
+by the distribution for testing purposes.
+Next you need to acquire some credentials. The credentials need to be signed by
+with the private key of admission control normally located in /etc/authd, so
+you should perform that as root or at least the owner of the private key.
+authd_setup.sh can be used again to perform this action as long as you have
+created a file with the conditions included in the credentials. The file conds
+is included in the distribution as an example. What you would finally run is:
+authd_setup.sh credentials pub conds creds
+
+Now you should have all necessary files to run client.
+
+client can either access admission control locally through IPC or remotely
+through authfe.
+When using a local authd these options are available:
+  -r  --persistent         Use persistent communication with server
+  -t  --timeout=TIMEOUT    Set admission control timeout to TIMEOUT
+  -P  --shmpath=path       Pathname to use for IPC with authd
+  -i  --shmid=project id   Project id to use for IPC with authd
+  -D  --dbhome=path        Set resource control DB home to path
+-P is the only mandatory.
+
+When using authdfe then use:
+  -H  --host=HOSTNAME      Server port binded to HOSTNAME
+  -p  --port=PORT          Use port number PORT
+  -r  --persistent         Use persistent communication with server
+  -D  --dbhome=path        Set resource control DB home to path
+  -s  --ssl                Use SSL
+  -k  --priv=FILENAME      Set file containing SSL private key
+  -c  --ca=FILENAME        Set file containing SSL CA's
+-H is the only mandatory.
+
+After starting client the following commands are available:
+MENU
+1. Set public key (pub)
+2. Set private key (priv)
+3. Set credentials (creds)
+4. Add name-value pair action
+5. Add function call action
+6. Send to admission control
+7. Reset
+0. Exit
+
+1,2 & 3 set the files containing the public/private keys and credentials.
+4 adds a new name - value pair action to the request. If you are using the
+default policy file then you will probably have to define the action
+"name=app_domain, value=MY DOMAIN".
+5 adds a new function call action. Some dummy ones have been predefined so you
+can quickly test things. You can alter the predefined functions list by
+modifying the functions_array in client.c and rebuild. When adding a function
+you are first prompted to pick a function and a library. After that you are
+prompted to enter the arguments of the function.
+6 submits the request to admission control and prints out the compliance value
+PCV and error code.
+7 resets the request so you can start from the beginning.
+
+
+Some examples are given on how you can run client.
+
+EXAMPLE 1
+
+Run client with a local authd using the default pathname for IPC '/tmp/.authd'
+establishing a persistent connection and using a timeout of 2 seconds.
+
+client -P /tmp/.authd -r -t 2
+
+Steps:
+4 -> app_domain -> MY DOMAIN
+5 -> 0 -> 1 -> http -> 32 -> 1000
+5 -> 0 -> 5 -> /home/user/test -> 123456789
+5 -> 0 -> 7 -> 1500.75
+6 -> PCV = 1 , errno = 0
+
+EXAMPLE 2
+
+Run client with a remote authd at 10.0.0.153:7914. No persistent connections and
+timeout is set to 2 seconds.
+
+./client -H 10.0.0.153 -p 7914 -t 2
+
+Repeat the steps of example 1.
+
+EXAMPLE 3
+
+The same as 2, but using SSL. You will need a private key and a certificate for
+authdfe and a private key for client.
+
+Generating these for testing using OpenSSL can be done as shown below:
+Private key for client:	openssl genrsa 1024 > client.key
+Private key for front-end authdfe: openssl genrsa 1024 > server.key
+Self-signed certificate for front-end authdfe: openssl req -new -x509 -nodes
+-sha1 -days 365 -key server.key > server.pem
+
+You can either generate your own files or use the ones included in the
+distribution for testing.
+
+./client -H 10.0.0.153 -p 7914 -t 2 -s -k client.key -c server.pem
+
+We set the file containing the server's certificate as our list of accepted
+certificates, but this is optional. If no such file is given the client accepts
+all certificates.
+
+Repeat the steps of example 1.
+
+EXAMPLE 4
+
+You can repeat the above examples and provide arguments that don't satisfy the
+conditions in the credentials to check negative authorisation requests.
+
+
+
+CALC_TEST
+---------
+
+Usage calc_test postfix|infix
+
+Postfix requires the expression to be in a 'stack format' e.g 10 5 +, while
+infix accepts a more human readable format (10 + 5 ) * 15.5
+
+Tokens need to be separated by spaces.
+
+
+
+SNPRINTFV_TEST
+--------------
+
+It just uses libsnprintfv and prints the maximum values for accepted function
+actions' arguments. If it crashes or the results are inconsistent you shouldn't
+use resource control.
+
+
+
+AUTHENTICATE
+------------
+
+Usage authenticate nonce pub_key_file priv_key_file
+
+It encrypts the nonce with the private key, decrypts it with the public key and
+prints out the result value. If the random nonce challenge functions properly
+the result should be the original nonce.

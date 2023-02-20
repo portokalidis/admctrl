@@ -1,0 +1,6 @@
+Herbert Bos <H.Bos@few.vu.nl>
+Original design of admission control for FFPF 
+(http://ffpf.sourceforge.net)
+
+Georgios Portokalidis <gportoka@liacs.nl>
+Updated design, implementation and GNU build scripts.

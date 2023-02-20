@@ -1,0 +1,51 @@
+.\" Copyright Georgios Portokalidis, 2004.
+.\"
+.\" This file may be copied under the conditions described
+.\" in the GNU GENERAL PUBLIC LICENSE, Version 2, June 1991
+.\" that should have been distributed together with this file.
+.\"
+.TH AUTHDEV_SUBMIT 9 "MAY 20, 2004" "Version 0.8" "Kernel Routines"
+.SH NAME
+authdev_submit \- Submit a request to admission control
+.SH SYNOPSIS
+.B "#include <authdev.h>"
+.P
+.B "int authdev_submit(adm_ctrl_request_t *"
+.IB "request"
+.B ", adm_ctrl_result_t *"
+.I "result"
+.B ", long "
+.IB "jiffies" ");"
+.SH DESCRIPTION
+The
+.B authdev_submit
+function is exported by the module \'authdev\'. 
+.P
+It submits the admission control request pointed to by
+.I request
+to the device driver. If there is a front-end authdfe(8) running and reading
+requests from the device, the request is going to be forwarded to authd(8). The
+results are going to be written back to the device and stored in the result
+structure pointed to by
+.I result
+\. The thread/process sleeps in the meanwhile for no more than
+.I jiffies
+jiffies (jiffies = seconds * HZ).
+.SH RETURN VALUE
+0 is returned on successful completion, or a negative error code on error.
+.SH ERRORS
+.TP
+.B EAGAIN
+Module is unloading or there is no front-end reading from the device.
+.TP
+.B EINTR
+The call was interrupted by a signal before the completing the submission.
+.TP
+.B ETIME
+The call did not complete in
+.IR "jiffies" .
+.SH AUTHOR
+Georgios Portokalidis (gportoka@liacs.nl)
+.SH SEE ALSO
+authd(8), authdfe(8)
+

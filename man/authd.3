@@ -1,0 +1,326 @@
+.\" Copyright Georgios Portokalidis, 2004.
+.\"
+.\" This file may be copied under the conditions described
+.\" in the GNU GENERAL PUBLIC LICENSE, Version 2, June 1991
+.\" that should have been distributed together with this file.
+.\"
+.TH AUTHD 3 "April 22, 2004" "Version 0.8" "System Library Functions Manual"
+.SH NAME
+libadmctrlcl.a \- Admission control client library
+.SH LIBRARY
+
+.SH SYNOPSIS
+.\"
+.\" ADMISSION CONTROL CLIENT
+.\"
+.B #include <admctrlcl.h>
+.P
+struct adm_ctrl_pair
+{
+  char name[MAX_PAIR_NAME];
+  char value[MAX_PAIR_VALUE];
+.br
+};
+.br
+typedef struct adm_ctrl_pair adm_ctrl_pair_t;
+.P
+struct adm_ctrl_result
+{
+  int PCV;
+  int error;
+  size_t resources_num;
+.br
+#ifdef WITH_RESOURCE_CONTROL
+  resource_required_t required[RESOURCE_CTRL_MAX_RESOURCES];
+.br
+#endif
+.br
+};
+.br
+typedef struct adm_ctrl_result adm_ctrl_result_t;
+.P
+struct adm_ctrl_request
+{
+  unsigned char pubkey[MAX_PUBKEY_SIZE];
+  unsigned char credentials[MAX_CREDENTIALS_SIZE];
+  unsigned int nonce;
+  unsigned char encrypted_nonce[MAX_ENC_NONCE_SIZE];
+  size_t encrypted_nonce_len;
+  unsigned int pairs_num;
+  adm_ctrl_pair_t pair_assertions[MAX_PAIR_ASSERTIONS];
+  unsigned int functions_num;
+  unsigned char function_list[MAX_FUNCTION_LIST_SIZE];
+.br
+};
+.br
+typedef struct adm_ctrl_request adm_ctrl_request_t;
+.P
+typedef struct admctrlcl admctrlcl_t;
+.\" ADMCTRLCL_NEW_IPC
+.P
+.B "admctrlcl_t *"
+.br
+.BI "admctrlcl_new_ipc(const char *" pathname ", int " id ","
+.BI "char " persistent ", struct timeval *" timeout ","
+.BI "adm_ctrl_request_t *" request ", adm_ctrl_result_t *" result ");"
+.\" ADMCTRLCL_NEW_SOCKET
+.P
+.B "admctrlcl_t *"
+.br
+.BI "admctrlcl_new_socket(const char *" hostname ", int " port ","
+.BI "char " persistent ", struct timeval *" timeout ","
+.BI "adm_ctrl_request_t *" request ", adm_ctrl_result_t *" result ");"
+.\" ADMCTRLCL_USE_SSL
+.P
+.B int
+.br
+.BI "admctrlcl_use_SSL(admctrlcl_t *" client ", const char *" key ","
+.BI "const char *" ca ");"
+.\" ADMCTRLCL_DESTROY
+.P
+.BI "void admctrlcl_destroy(admctrlcl_t *" client ");"
+.\" ADMCTRLCL_SET_REQUEST
+.P
+.BI "void admctrlcl_set_request(admctrlcl_t *" client ", const
+adm_ctrl_request_t
+.BI "*" request ");"
+.\" ADMCTRCL_GET_RESULT
+.P
+.B "adm_ctrl_result_t *"
+.br
+.BI "admctrlcl_get_result(admctrlcl_t *" client ");"
+.\" ADMCTRCL_COMM_OPEN
+.P
+.BI "int admctrlcl_comm_open(admctrlcl_t *" client ");"
+.\" ADMCTRLCL_COMM_CLOSE
+.P
+.BI "int admctrlcl_comm_close(admctrlcl_t *" client ");"
+.\" ADMCTLCL_RESET
+.P
+.BI "void admctrlcl_reset(admctrlcl_t *" client ");"
+.\" ADMCTRLCL_SUBMIT_REQUEST
+.P
+.BI "int admctrlcl_submit_request(admctrlcl_t *" client ");"
+.\"
+.\" ADMISSION CONTROL REQUEST
+.\"
+.P
+.P
+.B #include <admctrl_req.h>
+.\" ADMCTRL_REQ_SET_AUTHINFO"
+.P
+.B void
+.br
+.BI "admctrl_req_set_authinfo(adm_ctrl_request_t *" request ","
+.BI "const unsigned char *" pub ", const unsigned char *" creds ","
+.BI "unsigned int " nonce ", const unsigned char *" enc_nonce ","
+.BI "size_t " enc_nonce_len ");"
+.\" ADMCTRL_REQ_ADD_NVPAIR
+.P
+.B int
+.br
+.BI "admctrl_req_add_nvpair(adm_ctrl_request_t *" request ","
+.BI "const char *" name ", const char *" value ");"
+.\" ADMCTRL_REQ_ADD_FUNCTION
+.P
+.B int
+.br
+.BI "admctrl_req_add_function(adm_ctr_request_t *" request ","
+.BI "size_t *" fbuf_off ", const char *" fname ","
+.BI "const char *" lname ", const char *" argt ", ...);"
+.\" ADMCTRL_REQ_ADD_SFUNCTION
+.P
+.B int
+.br
+.BI "admctrl_req_add_sfunction(adm_ctrl_request_t *" request ","
+.BI "size_t *" fbuf_off ", const char *" fname ","
+.BI "const char *" lname ", const char *" argt ","
+.BI "const unsigned char *" args ", size_t " args_size ");"
+.\" ADMCTRL_REQ_ENCRYPT_NONCE
+.P
+.B size_t
+.br
+.BI "admctrl_req_encrypt_nonce(unsigned char **" enc_nonce ","
+.BI "unsigned int " nonce ", const char *" priv ");"
+.\" LINK OPTIONS
+.P
+.B Compile options: \-DWITH_RESOURCE_CONTROL
+.br
+Use this compiler flag if you are compiling with resource control.
+.P
+.B Link options: \-ladmctrlcl
+.br
+.RB "If SSL was enabled at compile time you will also need to use " -lssl "."
+.SH DESCRIPTION
+.\" ADMCTRCL_NEW_IPC
+.B admctrlcl_new_ipc()
+creates a new admission control client that will be using IPC.
+.IR pathname " and " id " are used to generate the key for IPC."
+.I persistent
+should be non-zero if communication is to established only once, when
+.B admctrlcl_comm_open()
+is called and not for every submitted request.
+.RB "The timeout of the " admctrlcl_submit_request() " is specified by"
+.IR timeout ". 0 timeout disables it."
+.RI "If " request " and " result " are not NULL, instead of allocating"
+new structures for sending requests and receiving results the ones supplied are
+going to be used. On success a pointer to a new client is returned, or NULL on
+error. 
+.IR errno " is set to ENOMEM if no memory could be allocated or is set by"
+.BR ftok() " if an IPC key could not be generated."
+.\" ADMCTRLCL_NEW_SOCKET
+.P
+.B admctrlcl_new_socket()
+creates a new admission control client that will be using sockets.
+.IR hostname " and " port " specify the host name and port number of the
+admission control server.
+.IR persistent " should be non-zero if communication is to established only
+once, when
+.BR admctrlcl_comm_open() " is called and not for every submitted request."
+.RB "The timeout of the " admctrlcl_submit_request() " is specified by"
+.IR timeout ". 0 timeout disables it."
+.RI "If " request " and " result " are not NULL, instead of allocating"
+new structures for sending requests and receiving results the ones supplied are
+going to be used. On success a pointer to a new client is returned, or NULL on
+error.
+.IR errno " is set to ENOMEM if no memory could be allocated or is set by"
+.BR gethostbyname() " if the server's host name could not be resolved."
+.\" ADMCTRLCL_USE_SSL
+.P
+.B admctrlcl_use_SSL()
+.RI "enables SSL for the client pointed to by " client ". It only affects
+clients using sockets and haven't yet connected to a server.
+.IR key " and " ca " should be the names of the files containing the client's
+private key and the list of accepted certificate authorities respectively. The
+later can be disabled, if set to NULL. 0 is returned on success, or -1 on
+error.
+.IR errno " is set to ENOPROTOOPT if SSL is not supported or the client is using
+IPC, or to EPROTO if an SSL error has occurred. OpenSSL error library functions
+can be used in the second case to get an error description. Check openssl(1)
+and ERR_get_error(3) for more information.
+.\" ADMCTRLCL_DESTROY
+.P
+.B admctrlcl_destroy()
+.RI "destroy the admission control client pointed to by " client "."
+.\" ADMCTRLCL_SET_REQUEST
+.P
+.B admctrlcl_set_request()
+.RI "sets the request point to by " request " as the request to be sent by the
+client. The request is copied to the client's request structure.
+.\" ADMCTRLCL_GET_RESULT
+.P
+.B admctrlcl_get_result()
+.RI "retrieves the result of the last " client " submission. The client's result
+structure is not copied, but instead just a pointer to it is returned. If a
+successful submission hasn't been made the user might receive garbage. After a
+successful submission 
+.I PCV
+ is 1 if the request was authorised or 0 otherwise.
+.IR error " is less than zero in case of an error. Possible values are listed in
+.BR admctrl_errno.h "."
+.IR resources_num " is set to the number of required resources by the request.
+It is always set to zero when resource control is not enabled.
+.IR required " is not a valid field if resource control is disabled. Otherwise
+it contains the resources required by the request. It can be used to consume
+the resources by using the resource control functions. Please read \'doc
+RESOURCE_CONTROL.txt\' for more information.
+.\" ADMCTRLCL_COMM_OPEN
+.P
+.B admctrlcl_comm_open()
+.RI "opens/initiates communication for " client ". It does nothing for
+non-persistent clients. 0 is returned on success, or -1 on failure.
+.IR errno " is set either by IPC calls, or socket and SSL operations depending
+on the client type. OpenSSL error library functions can be used to get an error
+description in case of SSL related errors. Check openssl(1) and
+ERR_get_error(3) for more information.
+.\" ADMCTRLCL_COMM_CLOSE
+.P
+.B admctrlcl_comm_close()
+.RI "closes/cleans-up communication for " client ". It does nothing for
+non-persistent clients. 0 is returned on success, or -1 on failure.
+.IR errno " is set either by IPC calls, or socket and SSL operations depending
+on the client type. OpenSSL error library functions can be used to get an error
+description in case of SSL related errors. Check openssl(1) and
+ERR_get_error(3) for more information.
+.\" ADMCTRLCL_RESET
+.P
+.B admctrlcl_reset()
+.RI "resets the request and result structures for " client ". It is wise to call
+this function after submitting a request and retrieving the result, and before
+setting a new request for submission.
+.\" ADMCTRLCL_SUBMIT_REQUEST
+.P
+.B admctrlcl_submit_request()
+.RI "submit the request for " client ". The timeout specified when the client
+was created is used. 0 is returned on success, or -1 on failure.
+.IR errno " is set either by IPC calls, or socket and SSL operations depending
+on the client type. OpenSSL error library functions can be used to get an error
+description in case of SSL related errors. Check openssl(1) and
+ERR_get_error(3) for more information.
+.\" ADMCTRL_REQ_SET_AUTHINFO
+.P
+.B admctrl_req_set_authinfo()
+sets authentication and authorisation information in request pointed to by
+.IR request ". " pub " and " creds " are buffers containing the users public
+key and credentials respectively.
+.IR nonce " is the random integer number given to the user and " enc_nonce
+.RI "should contain the " nonce " encrypted with the user's private key."
+.IR enc_nonce_len " should be the length of the encrypted nonce.
+.\" ADMCTRL_REQ_ADD_NVPAIR
+.P
+.B admctrl_req_add_nvpair()
+.RI "adds a name\-value pair action in request pointed to by " request "."
+.IR name " and " value " contain the name and value of the pair respectively."
+0 is returned on success, or -1 if the maximum number of pairs has been reached.
+.\" ADMCTRL_REQ_ADD_FUNCTION
+.P
+.B admctrl_req_add_function()
+.RI "adds a function action in request pointed to by " request "."
+.IR fbuf_off " is a pointer to the offset of the request's function
+buffer used. The user does not have to manipulate this value. Initialising the
+value to 0 for each new request and passing a reference to each call of
+.BR admctrl_req_add_function() " is sufficient."
+.IR fname " and " lname " are the function and library name respectively."
+.IR argt " is the function's argument type specification string. The length of
+this string is equal to the number of arguments of the function. Each character
+specifies the type of the function's corresponding argument. Valid characters
+are: \'s\', \'i\', \'f\', \'L\' and \'F\' as specified 
+in \'admctrl_argtypes.h\'. The variable argument list should contain as many
+arguments
+.RI "as the length of " argt ". O is returned on success, or -1 on error."
+.\" ADMCTRL_REQ_ADD_SFUNCTION
+.P
+.B admctrl_req_add_sfunction()
+is an alternative way to add a function action to the request pointed to by
+.IR request ". The arguments are similar to "
+.BR admctrl_req_add_function() ", but instead of a variable length argument list
+.RI "the user should provide a buffer pointed to by " args " containing a
+serialised form of the function's arguments.
+.IR args_size " is the size of the function's arguments serialised form. Please
+read \'doc/DEVELOPERS.txt\' for more information on serialising arguments.0 is
+returned on success, or -1 on error.
+.\" ADMCTRL_REQ_ENCRYPT_NONCE
+.P
+.B admctrl_req_encrypt_nonce()
+.RI "is an assisting function for end users. It encrypts the " nonce
+.RI "using the private key contained in file " priv ". A buffer is allocated and
+a pointer to it is returned in 
+.IR enc_nonce ". The size of the buffer containing the encrypted nonce is
+returned on success, or 0 on error.
+.SH RETURN VALUES
+All the functions allocating memory return a valid pointer on success, or NULL
+on error. While all functions returning integer (except
+.B admctrl_req_encrypt_nonce()
+return 0 on success, or -1 on failure. A lot of functions also set
+.IR errno ". Check the description section for more information."
+.SH SEE ALSO
+authdfe(8), authd(8), keynote(1), keynote(4), keynote(5), openssl(1),
+ERR_get_error(3)
+.SH AUTHOR
+Georgios Portokalidis (gportoka@liacs.nl)
+.SH NOTES
+IMPORTANT this version of
+.B libadmctrlcl.a
+doesn't support marshalling, thus will not work properly when the client and the
+front-end lie in machines having different byteorder or different number sizes.
+Future versions of the library will support this.

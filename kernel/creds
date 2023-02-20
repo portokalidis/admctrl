@@ -1,0 +1,16 @@
+KeyNote-Version: 2
+Authorizer:             "rsa-base64:MIGJAoGBALkWp6kaeoMVvFshJ9V2axWwoEExC\
+            xGL4ubAYEKyDIyqEIcnViEWf5ASPzLygPawSH9py3E04lzS0/\
+            9Usz+VT0xbgPZJ+eP20my6LcuGv6dgO5taBsLdsOPZwl+gAPL\
+            jpC3qlnv3HI7jg5ftQ64VoHP4ZRNycUWiNtaA8iTE+LonAgMB\
+            AAE="
+Licensees:             "rsa-base64:MIGJAoGBALFFnb0MCAblW1PGff6naNomQwVQB\
+            4dFKtf8tXGqt36yyJdVtkd+ovWp4804KpIi7YPcJgt0U4awBx\
+            I0CeUT2H90Se5Ys5531GyR113GV74/2ID2MIGkHmQMVsWmbH/\
+            e85NFqXvRm443gWjqr5K01/zV6SLrRojs2XZRc3JIOkkhAgMB\
+            AAE="
+Conditions: app_domain == "FFPF" -> "true";
+Signature:             "sig-rsa-sha1-base64:iQq/Mmb/vyYGQbsNUkpnKB5X3lv5\
+            H0/Y5T60uJe6Whm9LZYwhdABQLhYaW/cZ+NW0mcfvpY49ERcV\
+            DTl1aMEYNKmLScRDx+cZRdgdhMjs7it1HkTKQ3a0kuLZqSyxT\
+            HXV5yvVc+txcc3OWVJJJrvSTbpSZnWm/Wf8NwWvzRzEHQ="

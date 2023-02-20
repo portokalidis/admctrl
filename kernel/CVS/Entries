@@ -1,0 +1,18 @@
+/Makefile/1.4/Mon Jul  5 13:38:46 2004//
+/Makefile.2/1.4/Mon Jul  5 13:38:46 2004//
+/admctrl_config.h/1.3/Sun Jul  4 12:19:42 2004//
+/authdev.c/1.5/Mon Jul  5 13:38:46 2004//
+/authdev.h/1.3/Sun Jul  4 12:19:42 2004//
+/bytestream.h/1.2/Thu May 20 13:32:57 2004//
+/client.key/1.1/Sun Jul  4 16:46:16 2004//
+/compile.sh/1.2/Sun Jul  4 12:19:42 2004//
+/conds/1.1/Sun Jul  4 16:46:16 2004//
+/debug.h/1.2/Thu May 20 13:32:57 2004//
+/dummy_authd.c/1.4/Thu May 20 13:32:57 2004//
+/dummy_client.c/1.6/Sun Jul  4 16:46:16 2004//
+/kadm_ctrl.h/1.2/Mon Jul  5 13:38:46 2004//
+/kadmctrl_req.c/1.2/Mon Jul  5 13:38:46 2004//
+/kadmctrl_req.h/1.1/Sun Jul  4 12:19:42 2004//
+/kclient.c/1.2/Mon Jul  5 13:38:46 2004//
+/pub/1.1/Sun Jul  4 16:46:16 2004//
+D

@@ -1,0 +1,117 @@
+.\" Copyright Georgios Portokalidis, 2004.
+.\"
+.\" This file may be copied under the conditions described
+.\" in the GNU GENERAL PUBLIC LICENSE, Version 2, June 1991
+.\" that should have been distributed together with this file.
+.\"
+.TH AUTHDB_MANAGE 8 "May 18, 2004" "Version 0.8" "System Manager's Manual"
+.SH NAME
+authdb_manage \- Admission control resources database manager
+.SH SYNOPSIS
+.BI "authdb_manage [" R "] " db_directory " " db_filename
+.SH DESCRIPTION
+A console menu driven interface to manage the databases used by admission
+control for resource control.
+.br
+.IR db_directory " specifies the directory where the database files are located
+and
+.I db_filename
+is the name of the file containing the databases. The optional parameter
+.I R
+can be used to try and recover a corrupted database, in case for example
+authd(8) crashes. The databases need to be in Berkeley DB (http:/
+www.sleepycat.com) format and should be stored in a single file.
+.P
+.B authdb_manage
+can be used to manage:
+.IP \(bu 2
+Function names
+.IP \(bu 2
+Library names
+.IP \(bu 2
+Available resources for library\-function pairs
+.IP \(bu 2
+Resource consumption of library\-function pairs
+.P
+When first run,
+.B authdb_manage
+prints a menu with the above mentioned entities.
+When one of them is selected the user is presented with the following database
+actions:
+.P
+.BR "1. List" "   [ list stored entities ]"
+.br
+.BR "2. Insert" " [ insert a new entity ]"
+.br
+.BR "3. Delete" " [ delete an entity ]"
+.br
+.BR "0. Return" " [ return to the previous menu ]"
+.P
+Below we describe the different entities that can be manipulated.
+.P
+.B FUNCTIONS
+.br
+Each function must have a unique name and a 32 bits integer key. Only the lower
+16 bits of the key can be set by the user and it shouldn't be 0. Note that
+these values are not checked for correctness by
+.BR "authdb_manage" .
+.br
+Additionally a function can be set to have 'global resource consumption' which
+means that its resource consumption is the same for all libraries. This will
+cause the upper 16 bits of the key to be asserted.
+.P
+.B LIBRARIES
+.br
+A library must have a unique name and a 32 bits integer key. Only the lower 16
+bits of the key can be set by the user and it shouldn't be 0. Note that these
+values are not checked for correctness by
+.BR "authdb_manage" .
+.P
+.B RESOURCES
+.br
+A resource must have a unique 32 bits integer key and it shouldn't be zero. Note
+that this value is not checked for correctness by
+.B "authdb_manage" .
+.br
+Resource availability is also represented by a 32 bits integer. Optionally a
+description string can also be specified.
+.P
+.B RESOURCE CONSUMPTION
+.br
+Resource consumption is specified for each library\-function pair.
+The user is prompted to select a library and a function from the ones existing
+in the databases (when a function is set to have 'global resource consumption',
+the user is still prompted for a library but the selection is ignored).
+.br
+Resource consumption has a fixed part and a variable one. The fixed one is a 32
+bit integer value representing the fixed cost to be assigned to each occurrence
+of the function by resource control. The variable cost is calculated at runtime
+by taking into account the values of the function's arguments. For this reason
+the user is prompted to enter a formula that will be used to calculate this
+cost. The formula is a simple arithmetic expression that can contain the
+following operators: +, -, *, /, (, ). The values of the function's arguments
+can be inserted in the formula by using printf like notation. For example an
+integer 2nd argument would be represented as '%2$d' and 1st unsigned long long
+argument as '%1$llu'. In case of strings their size is replaced in the formula
+and functions are ignored.
+.SH EXAMPLES
+.B "authdb_manage /etc/authd/resctrl resource.db"
+.P
+Start the manager for the database file \'resource.db\' located in \'/etc/authd
+resctrl\'
+.SH SEE ALSO
+authd(8)
+.SH AUTHOR
+Georgios Portokalidis (gportoka@liacs.nl)
+.SH NOTES
+If
+.B authdb_manage
+is not terminated properly the latest changes to the databases
+might not have been stored. Even tough Ctrl-C from the keyboard is blocked,
+users should take special care to exit the application normally.
+.br
+This utility is only provided as quick way to setup a resource control database
+and is not in any was the best way to manage a continuously growing database.
+.br
+Special care should be take when setting variable cost formulas, since bad
+illegal argument types and numbers, could cause authd(8) to crash.

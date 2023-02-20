@@ -1,0 +1,76 @@
+.\" Copyright Georgios Portokalidis, 2004.
+.\"
+.\" This file may be copied under the conditions described
+.\" in the GNU GENERAL PUBLIC LICENSE, Version 2, June 1991
+.\" that should have been distributed together with this file.
+.\"
+.TH AUTHD_SETUP 8 "May 28, 2004" "Version 0.8" "System Manager's Manual"
+.SH NAME
+authd_setup.sh \- Admission control setup script
+.SH SYNOPSIS
+.B authd_setup.sh
+.IB install "|" uninstall "|" policy "|" keys "|" credentials 
+.SH DESCRIPTION
+A script to help setting up a system for admission control. It creates default
+files needed by authd(8) for operation and furthermore can be used to generate
+credentials.
+.br
+Clients can also use it to generate key pairs.
+.P
+For more fine grained control keynote(1) should be used directly to generate
+keys. Note that client keys need to be RSA.
+.P
+On how to write policy files consult keynote(5).
+.P
+Note that this script cannot be used to initialise resource control. Please read
+\'doc/RESOURCE_CONTROL.txt\' and authdb_manage(8) for more information. 
+.SH OPTIONS
+.TP
+.RI "" install " [ " user_id " ] [ " pathname " ]" 
+.RI "Install all necessary files for admission control in " pathname " using
+.RI "user id " user_id ". Defaults are \'/etc/authd' and the active user id."
+Files installed include public, private key and a policy. Additionally the file
+\'/tmp/\.authd\' is created to be used for IPC communication. If you wish to
+use another file you can, by specifying it when running authd.
+.TP
+.RI "" uninstall " [ " pathname " ] "
+.RI "Uninstall the files installed in " pathname ". It will also remove the
+directory if it is empty. \'/tmp/.authd\' will also be removed.
+.TP
+.RI "" policy " [ " user_id " ] [ " pathname " ]"
+.RI "Create a default policy file, install it in " pathname " and set 
+.RI "ownership to " user_id "."
+.TP
+.RI "" keys " [ " key_size " ] [ " pubk_name " ] [ " privk_name " ]" 
+.RI "Create an RSA key pair of " key_size " bits and store the public key to
+.RI "file " pubk_name " and the private key to " privk_name "."
+Default key size is 1024 bits and default filenames are \'pub.key\' and
+\'priv.key\'.
+.TP
+.RI "" credentials " " pubkey " " conditions " " output " [ " path " ]"
+.RI "Create and sign credentials storing them in file specified by " output "."
+The licensee of the credentials is the public key contained in file
+.I pubkey
+.RI "and the conditions used are from file " conditions "."
+.RI "If " path " is specified then admission control's keys are looked up there
+instead of the default location \'/etc/authd\'.
+.SH EXIT STATUS
+Zero if terminated successfully, or non-zero on error.
+.SH FILES
+/etc/authd/authd_key.pub, /etc/authd/authd_key.priv, /etc/authd/policy, 
+tmp/.authd
+.SH EXAMPLES
+.B "authd_setup.sh install authd"
+.br
+Install files in standard location \'/etc/authd\' and set ownership to user
+'authd'.
+.P
+.B "authd_setup.sh keys 2046 mypub mypriv"
+.br
+Create a key pair of 2046 bits size and store public key to \'mypub\' and
+private key to \'mypriv\'.
+.SH SEE ALSO
+authd(8), authdb_manage(8), keynote(1), keynote(5)
+.SH AUTHOR
+Georgios Portokalidis (gportoka@liacs.nl)
+
